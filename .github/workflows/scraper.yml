@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -23,5 +25,26 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests beautifulsoup4 lxml Pillow
 
+      - name: Configure git identity
+        run: |
+          git config --global user.name "BenInfinite"
+          git config --global user.email "beninfinite20@gmail.com"
+
       - name: Run scraper
         run: python scraper.py
+
+      - name: Commit and push if changes exist
+        run: |
+          if [[ -n "$(git status --porcelain images)" ]]; then
+            git add images
+            if git log -1 --pretty=%B | grep -q "Add"; then
+              commit_msg="Update images for $(date +'%Y%m%d')"
+            else
+              commit_msg="Add images for $(date +'%Y%m%d')"
+            fi
+            git commit -m "$commit_msg"
+            git push
+            echo "✅ Changes committed and pushed."
+          else
+            echo "⚠️ No new images downloaded today, skipping commit."
+          fi
